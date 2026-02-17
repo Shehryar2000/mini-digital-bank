@@ -17,15 +17,6 @@ CREATE TABLE customers (
 );
 
 CREATE TABLE accounts (
-    account_id UUID PRIMARY KEY,
-    account_number VARCHAR(100) UNIQUE NOT NULL,
-    customer_id VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL,
-    enabled BOOLEAN NOT NULL,
-    created_at TIMESTAMP NOT NULL
-);
-
-CREATE TABLE accounts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     account_number VARCHAR(100) UNIQUE NOT NULL,
     customer_id UUID NOT NULL,
