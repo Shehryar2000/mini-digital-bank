@@ -6,14 +6,17 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+
 );
 
 CREATE TABLE customers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
 );
 
 CREATE TABLE accounts (
@@ -23,8 +26,8 @@ CREATE TABLE accounts (
     balance NUMERIC(19,4) NOT NULL DEFAULT 0.0000,
     status VARCHAR(20) NOT NULL,
     version INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
     CONSTRAINT fk_account_customer
         FOREIGN KEY (customer_id)
         REFERENCES customers(id)
@@ -38,8 +41,7 @@ CREATE TABLE transfers (
     amount NUMERIC(19,4) NOT NULL,
     status VARCHAR(30) NOT NULL,
     reference_id VARCHAR(100) UNIQUE NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
+    created_at TIMESTAMP NOT NULL,
     CONSTRAINT fk_transfer_from
         FOREIGN KEY (from_account_id)
         REFERENCES accounts(id),
@@ -55,8 +57,7 @@ CREATE TABLE ledger_entries (
     type VARCHAR(20) NOT NULL,
     amount NUMERIC(19,4) NOT NULL,
     reference_id VARCHAR(100),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
+    created_at TIMESTAMP NOT NULL,
     CONSTRAINT fk_ledger_account
         FOREIGN KEY (account_id)
         REFERENCES accounts(id)
@@ -66,7 +67,7 @@ CREATE TABLE idempotency_keys (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     idempotency_key VARCHAR(255) UNIQUE NOT NULL,
     response_json TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL
 );
 
 CREATE TABLE audit_logs (
@@ -75,8 +76,7 @@ CREATE TABLE audit_logs (
     action VARCHAR(100) NOT NULL,
     ip_address VARCHAR(50),
     status VARCHAR(50),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
+    created_at TIMESTAMP NOT NULL,
     CONSTRAINT fk_audit_user
         FOREIGN KEY (user_id)
         REFERENCES users(id)
