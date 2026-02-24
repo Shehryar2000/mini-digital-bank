@@ -1,0 +1,2 @@
+ALTER TABLE users
+ALTER COLUMN lock_time TYPE TIMESTAMP(6);

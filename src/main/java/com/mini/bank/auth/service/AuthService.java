@@ -8,6 +8,7 @@ import com.mini.bank.auth.repository.UserRepository;
 import com.mini.bank.auth.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -40,18 +41,64 @@ public class AuthService {
 
     public String login(UserLoginRequest request) {
 
-        System.out.println("Login User");
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+        try {
+            System.out.println("Login User");
 
-        if (!authentication.isAuthenticated()) {
+            User user = userRepository
+                    .findByUsername(request.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+
+            unlockIfTimeExpired(user);
+
+            if (user.isAccountLocked()) {
+                throw new RuntimeException("Account is locked, Try after 15 minutes.");
+            }
+
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()
+                    )
+            );
+
+            user.setFailedAttempts(0);
+            userRepository.save(user);
+
+            return jwtUtil.generateToken(request.getUsername());
+
+        } catch (BadCredentialsException e) {
+
+            User user = userRepository
+                    .findByUsername(request.getUsername())
+                    .orElse(null);
+
+            if (user != null) {
+                int attempts = user.getFailedAttempts() + 1;
+                user.setFailedAttempts(attempts);
+
+                if (attempts >= 5) {
+                    user.setAccountLocked(true);
+                    user.setLockTime(LocalDateTime.now());
+                }
+                userRepository.save(user);
+            }
+
             throw new RuntimeException("Invalid credentials");
         }
 
-        return jwtUtil.generateToken(request.getUsername());
+    }
+
+    private void unlockIfTimeExpired(User user) {
+
+        if (user.isAccountLocked() &&
+                user.getLockTime() != null &&
+                user.getLockTime().plusMinutes(15).isBefore(LocalDateTime.now())) {
+
+            user.setAccountLocked(false);
+            user.setFailedAttempts(0);
+            user.setLockTime(null);
+
+            userRepository.save(user);
+        }
     }
 }
