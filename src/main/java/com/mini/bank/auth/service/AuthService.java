@@ -6,6 +6,9 @@ import com.mini.bank.auth.entity.User;
 import com.mini.bank.auth.enums.Role;
 import com.mini.bank.auth.repository.UserRepository;
 import com.mini.bank.auth.security.JwtUtil;
+import com.mini.bank.common.exception.AccountLockedException;
+import com.mini.bank.common.exception.InvalidCredentialsException;
+import com.mini.bank.common.exception.UsernameAlreadyExistsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,7 +31,7 @@ public class AuthService {
     public void register(UserRegisterRequest request) {
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new UsernameAlreadyExistsException("Username already exists");
         }
 
         User user = new User();
@@ -46,12 +49,12 @@ public class AuthService {
 
             User user = userRepository
                     .findByUsername(request.getUsername())
-                    .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                    .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
 
             unlockIfTimeExpired(user);
 
             if (user.isAccountLocked()) {
-                throw new RuntimeException("Account is locked, Try after 15 minutes.");
+                throw new AccountLockedException("Account is locked, Try after 15 minutes.");
             }
 
             Authentication authentication = authenticationManager.authenticate(
@@ -83,7 +86,7 @@ public class AuthService {
                 userRepository.save(user);
             }
 
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException("Invalid credentials");
         }
 
     }
