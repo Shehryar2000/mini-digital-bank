@@ -2,6 +2,7 @@ package com.mini.bank.auth.service;
 
 import com.mini.bank.auth.dto.UserLoginRequest;
 import com.mini.bank.auth.dto.UserRegisterRequest;
+import com.mini.bank.auth.dto.UserRegisterResponse;
 import com.mini.bank.auth.entity.User;
 import com.mini.bank.auth.enums.Role;
 import com.mini.bank.auth.repository.UserRepository;
@@ -9,6 +10,10 @@ import com.mini.bank.auth.security.JwtUtil;
 import com.mini.bank.common.exception.AccountLockedException;
 import com.mini.bank.common.exception.InvalidCredentialsException;
 import com.mini.bank.common.exception.UsernameAlreadyExistsException;
+import com.mini.bank.customer.entity.Customer;
+import com.mini.bank.customer.repository.CustomerRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -16,6 +21,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -24,22 +30,57 @@ import java.time.LocalDateTime;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
-    public void register(UserRegisterRequest request) {
+    @PersistenceContext
+    private EntityManager entityManager;
 
+    @Transactional
+    public UserRegisterResponse register(UserRegisterRequest request) {
+
+        // Validate username
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new UsernameAlreadyExistsException("Username already exists");
         }
 
+        // Validate email
+        if (customerRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        //Creating User
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPasswordHash(bCryptPasswordEncoder.encode(request.getPassword()));
-        user.setRole(Role.ROLE_USER);
+        user.setRole(Role.ROLE_CUSTOMER);
         user.setEnabled(true);
         userRepository.save(user);
+
+        // Creating Customer
+        Customer customer = new Customer();
+        customer.setName(request.getName());
+        customer.setEmail(request.getEmail());
+
+        customer.setUser(user);
+        user.setCustomer(customer);
+
+        customerRepository.saveAndFlush(customer);
+        entityManager.refresh(customer);
+
+        UserRegisterResponse response = UserRegisterResponse.builder()
+                .userId(user.getId())
+                .customerId(customer.getId())
+                .customerNumber(customer.getCustomerNumber())
+                .username(request.getUsername())
+                .name(request.getName())
+                .email(request.getEmail())
+                .build();
+
+        return response;
+
     }
 
     public String login(UserLoginRequest request) {

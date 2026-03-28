@@ -1,5 +1,6 @@
 package com.mini.bank.customer.entity;
 
+import com.mini.bank.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,8 +28,12 @@ public class Customer {
     @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(name = "customer_number",  nullable = false, length = 50)
+    @Column(name = "customer_number", nullable = false, updatable = false , insertable = false ,length = 50)
     private Long customerNumber;
+
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)

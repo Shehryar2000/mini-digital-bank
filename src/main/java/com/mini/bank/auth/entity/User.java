@@ -1,6 +1,7 @@
 package com.mini.bank.auth.entity;
 
 import com.mini.bank.auth.enums.Role;
+import com.mini.bank.customer.entity.Customer;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,6 +36,9 @@ public class User {
 
     @Column(name = "enabled", nullable = false)
     private boolean enabled = true;
+
+    @OneToOne(mappedBy = "user")
+    private Customer customer;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
