@@ -1,6 +1,7 @@
 package com.mini.bank.auth.service;
 
 import com.mini.bank.auth.dto.UserLoginRequest;
+import com.mini.bank.auth.dto.UserLoginResponse;
 import com.mini.bank.auth.dto.UserRegisterRequest;
 import com.mini.bank.auth.dto.UserRegisterResponse;
 import com.mini.bank.auth.entity.User;
@@ -83,7 +84,7 @@ public class AuthService {
 
     }
 
-    public String login(UserLoginRequest request) {
+    public UserLoginResponse login(UserLoginRequest request) {
 
         try {
             System.out.println("Login User");
@@ -108,7 +109,11 @@ public class AuthService {
             user.setFailedAttempts(0);
             userRepository.save(user);
 
-            return jwtUtil.generateToken(request.getUsername());
+            UserLoginResponse response = UserLoginResponse.builder()
+                    .token(jwtUtil.generateToken(user))
+                    .build();
+
+            return response;
 
         } catch (BadCredentialsException e) {
 

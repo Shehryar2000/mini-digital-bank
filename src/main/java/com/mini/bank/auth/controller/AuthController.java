@@ -1,6 +1,7 @@
 package com.mini.bank.auth.controller;
 
 import com.mini.bank.auth.dto.UserLoginRequest;
+import com.mini.bank.auth.dto.UserLoginResponse;
 import com.mini.bank.auth.dto.UserRegisterRequest;
 import com.mini.bank.auth.dto.UserRegisterResponse;
 import com.mini.bank.auth.service.AuthService;
@@ -30,8 +31,8 @@ public class AuthController {
     }
 
     @PostMapping("/login-user")
-    public ResponseEntity<String> loginUser(@RequestBody UserLoginRequest request) {
-        String token = authService.login(request);
-        return ResponseEntity.ok(token);
+    public ResponseEntity<UserLoginResponse> loginUser(@RequestBody UserLoginRequest request) {
+        UserLoginResponse response = authService.login(request);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }
