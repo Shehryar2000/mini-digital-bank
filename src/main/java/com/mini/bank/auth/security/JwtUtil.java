@@ -1,6 +1,7 @@
 package com.mini.bank.auth.security;
 
 import com.mini.bank.auth.entity.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -39,13 +40,26 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String extractUsername(String token) {
+    public Claims extractClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                .getBody();
+    }
+
+    public String extractUsername(String token) {
+        return extractClaims(token).getSubject();
+    }
+
+    public UUID extractUserId(String token) {
+        return UUID.fromString(
+                extractClaims(token).get("userId").toString()
+        );
+    }
+
+    public String extractRole(String token) {
+        return extractClaims(token).get("role").toString();
     }
 
     public boolean validateToken(String token) {
