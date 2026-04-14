@@ -1,21 +1,18 @@
 package com.mini.bank.auth.dto;
 
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.UUID;
 
+@Getter
+@Setter
 @Builder
-@Data
-public class UserRegisterResponse {
+public class UserResponse {
 
     private UUID userId;
-    private UUID customerId;
-    private Long customerNumber;
     private String username;
-    private String name;
-    private String email;
-
+    private String role;
+    private boolean enabled;
 }
