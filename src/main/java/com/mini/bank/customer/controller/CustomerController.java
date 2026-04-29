@@ -1,7 +1,10 @@
 package com.mini.bank.customer.controller;
 
+import com.mini.bank.common.util.IpUtil;
 import com.mini.bank.customer.dto.CustomerResponse;
+import com.mini.bank.customer.dto.UpdateCustomerResponse;
 import com.mini.bank.customer.dto.UpdateCustomerRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,15 +21,17 @@ public class CustomerController {
     }
 
     @GetMapping("/myself")
-    public ResponseEntity<CustomerResponse> getCurrentCustomer() {
-        CustomerResponse response = customerService.getCurrentCustomer();
+    public ResponseEntity<CustomerResponse> getCurrentCustomer(HttpServletRequest http) {
+        String ip = IpUtil.getClientIp(http);
+        CustomerResponse response = customerService.getCurrentCustomer(ip);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @PutMapping("/myself")
-    public ResponseEntity<?> updateCurrentCustomer(@RequestBody UpdateCustomerRequest request) {
-        customerService.updateCurrentCustomer(request);
-        return ResponseEntity.status(HttpStatus.OK).body("Customer updated successfully");
+    @PutMapping("/update")
+    public ResponseEntity<UpdateCustomerResponse> updateCurrentCustomer(@RequestBody UpdateCustomerRequest request, HttpServletRequest http) {
+        String ip = IpUtil.getClientIp(http);
+        UpdateCustomerResponse response = customerService.updateCurrentCustomer(request, ip);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
 }
