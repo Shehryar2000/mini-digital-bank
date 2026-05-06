@@ -14,6 +14,8 @@ import com.mini.bank.customer.service.CustomerService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,6 +32,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepository;
     private final CustomerService customerService;
@@ -69,8 +73,16 @@ public class AuthService {
             user.setCustomer(customer);
             entityManager.refresh(customer);
 
+            log.info("User and Customer registered successfully | userId={}, userName={}, customerId={}, customerName={}",
+                    user.getId(),
+                    user.getUsername(),
+                    customer.getId(),
+                    customer.getName()
+            );
+
             // Audit Maintaining - User Registration Success
-            auditService.success(user.getId(),
+            auditService.success(
+                    user.getId(),
                     AuditAction.REGISTER,
                     ip,
                     AuditEntityType.USER,
@@ -81,7 +93,7 @@ public class AuthService {
                             "role", user.getRole().name()
                     ));
 
-            UserRegisterResponse response = UserRegisterResponse.builder()
+            return UserRegisterResponse.builder()
                     .userId(user.getId())
                     .customerId(customer.getId())
                     .customerNumber(customer.getCustomerNumber())
@@ -90,9 +102,9 @@ public class AuthService {
                     .email(request.getEmail())
                     .build();
 
-            return response;
-
         } catch (Exception e) {
+
+            log.warn("User registration failed");
 
             // Audit Maintaining - User Registration Failed
             auditService.failure(
@@ -118,6 +130,8 @@ public class AuthService {
             // Username Not Found
             if (user == null) {
 
+                log.warn("User login failed due to invalid credentials");
+
                 auditService.failure(
                         null,
                         AuditAction.LOGIN,
@@ -134,6 +148,8 @@ public class AuthService {
 
             // User disabled
             if (!user.isEnabled()) {
+
+                log.warn("User login failed due to user is disabled");
 
                 auditService.failure(
                         user.getId(),
@@ -152,6 +168,8 @@ public class AuthService {
 
             // Still Account Locked
             if (user.isAccountLocked()) {
+
+                log.warn("User login failed due to account locked");
 
                 auditService.failure(
                         user.getId(),
@@ -190,6 +208,11 @@ public class AuthService {
             } else {
                 metadata.put("role", user.getRole().name());
             }
+
+            log.info("User login successfully | userId={}, userName={}",
+                    user.getId(),
+                    user.getUsername()
+            );
 
             // Audit Maintaining - User Login Success
             auditService.success(
@@ -230,6 +253,11 @@ public class AuthService {
                     user.setAccountLocked(true);
                     user.setLockTime(LocalDateTime.now());
 
+                    log.info("User account locked due to many failed login attempts | userId={}, userName={}",
+                            user.getId(),
+                            user.getUsername()
+                    );
+
                     // Audit Maintaining - Account Locking
                     auditService.success(
                             user.getId(),
@@ -248,6 +276,8 @@ public class AuthService {
         } catch (InvalidCredentialsException | UserDisabledException | AccountLockedException e) {
             throw e;
         } catch (Exception e) {
+
+            log.warn("User login failed");
 
             auditService.failure(
                     null,
@@ -275,8 +305,12 @@ public class AuthService {
 
             userRepository.save(user);
 
-            // Audit Maintaining - Account Unlocked Success
+            log.info("User account unlocked successfully | userId={}, userName={}",
+                    user.getId(),
+                    user.getUsername()
+            );
 
+            // Audit Maintaining - Account Unlocked Success
             auditService.success(
                     user.getId(),
                     AuditAction.ACCOUNT_UNLOCKED,

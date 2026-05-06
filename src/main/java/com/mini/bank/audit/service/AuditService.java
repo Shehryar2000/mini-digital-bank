@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -44,11 +46,7 @@ public class AuditService {
             auditLog.setEntityId(entityId);
 
             if (metadata != null) {
-//                try {
-//                    auditLog.setMetadata(objectMapper.writeValueAsString(metadata));
-//                } catch (JsonProcessingException e) {
-//                    auditLog.setMetadata("{\"error\":\"metadata serialization failed\"}");
-//                }
+
                 try{
                     auditLog.setMetadata(metadata);
                 }catch (Exception e){
@@ -70,6 +68,7 @@ public class AuditService {
         log(userId, action, ip, AuditStatus.SUCCESS, type, entityId, metadata);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void failure(UUID userId, AuditAction action, String ip,
                         AuditEntityType type, UUID entityId, Map<String, Object> metadata) {
         log(userId, action, ip, AuditStatus.FAILURE, type, entityId, metadata);

@@ -10,7 +10,6 @@ import java.util.UUID;
 @Setter
 @Builder
 public class UserResponse {
-
     private UUID userId;
     private String username;
     private String role;

@@ -11,6 +11,8 @@ import com.mini.bank.auth.repository.UserRepository;
 import com.mini.bank.common.exception.InvalidCredentialsException;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -24,6 +26,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final UserRepository userRepository;
     private final AuditService auditService;
@@ -33,6 +37,11 @@ public class UserService {
 
         try {
             User user = getUserObject();
+
+            log.info("User fetched successfully | userId={}, userName={}",
+                    user.getId(),
+                    user.getUsername()
+            );
 
             auditService.success(
                     user.getId(),
@@ -53,6 +62,8 @@ public class UserService {
         } catch (UsernameNotFoundException e) {
             throw e;
         } catch (Exception e) {
+
+            log.warn("User fetching failed");
 
             auditService.failure(
                     null,
@@ -76,6 +87,8 @@ public class UserService {
 
             if (!bCryptPasswordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
 
+                log.warn("User password change failed due to invalid old password | userId={}", user.getId());
+
                 // Audit Maintaining - Password Change Failure
                 auditService.failure(
                         user.getId(),
@@ -90,6 +103,12 @@ public class UserService {
 
             user.setPasswordHash(bCryptPasswordEncoder.encode(request.getNewPassword()));
             userRepository.save(user);
+
+            log.info("User password changed successfully | userId={}, userName={}",
+                    user.getId(),
+                    user.getUsername()
+            );
+
             // Audit Maintaining - Password Change Success
             auditService.success(
                     user.getId(),
@@ -106,6 +125,8 @@ public class UserService {
         } catch (InvalidCredentialsException e) {
             throw e;
         } catch (Exception e) {
+
+            log.warn("User password change failed");
 
             auditService.failure(
                     null,

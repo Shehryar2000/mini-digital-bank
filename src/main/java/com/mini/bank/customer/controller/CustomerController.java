@@ -1,8 +1,8 @@
 package com.mini.bank.customer.controller;
 
 import com.mini.bank.common.util.IpUtil;
+import com.mini.bank.corebanking.dto.ApiResponse;
 import com.mini.bank.customer.dto.CustomerResponse;
-import com.mini.bank.customer.dto.UpdateCustomerResponse;
 import com.mini.bank.customer.dto.UpdateCustomerRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -28,9 +28,9 @@ public class CustomerController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<UpdateCustomerResponse> updateCurrentCustomer(@RequestBody UpdateCustomerRequest request, HttpServletRequest http) {
+    public ResponseEntity<ApiResponse> updateCurrentCustomer(@RequestBody UpdateCustomerRequest request, HttpServletRequest http) {
         String ip = IpUtil.getClientIp(http);
-        UpdateCustomerResponse response = customerService.updateCurrentCustomer(request, ip);
+        ApiResponse response = customerService.updateCurrentCustomer(request, ip);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

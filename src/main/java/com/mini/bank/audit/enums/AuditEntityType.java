@@ -4,5 +4,6 @@ public enum AuditEntityType {
     USER,
     CUSTOMER,
     ACCOUNT,
+    LEDGER,
     TRANSFER
 }

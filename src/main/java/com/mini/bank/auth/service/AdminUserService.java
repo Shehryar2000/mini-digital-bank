@@ -13,6 +13,8 @@ import com.mini.bank.common.exception.UserAlreadyDisabledException;
 import com.mini.bank.common.exception.UserAlreadyEnabledException;
 import com.mini.bank.common.security.AuthContext;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AdminUserService {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminUserService.class);
 
     private final UserRepository userRepository;
     private final AuditService auditService;
@@ -43,6 +47,11 @@ public class AdminUserService {
             user.setEnabled(true);
             userRepository.save(user);
 
+            log.info("User enabled successfully | adminId={}, userId={}, userName={}",
+                    adminId,
+                    user.getId(),
+                    user.getUsername()
+            );
 
             // Audit Maintaining - Enable User Success
             auditService.success(adminId,
@@ -58,6 +67,11 @@ public class AdminUserService {
                     .build();
 
         } catch (Exception e) {
+
+            log.warn("User enable failed | adminId={}, userId={}",
+                    adminId,
+                    userId
+            );
 
             // Audit Maintaining - Enable User Failure
             auditService.failure(
@@ -91,6 +105,13 @@ public class AdminUserService {
 
             user.setEnabled(false);
             userRepository.save(user);
+
+            log.info("User disabled successfully | adminId={}, userId={}, userName={}",
+                    adminId,
+                    user.getId(),
+                    user.getUsername()
+            );
+
             // Audit Maintaining - Disable User Success
             auditService.success(
                     adminId,
@@ -106,6 +127,11 @@ public class AdminUserService {
                     .build();
 
         } catch (Exception e) {
+
+            log.warn("User disable failed | adminId={}, userId={}",
+                    adminId,
+                    userId
+            );
 
             // Audit Maintaining - Disable User Failure
             auditService.failure(
@@ -134,6 +160,14 @@ public class AdminUserService {
             user.setRole(newRole);
             userRepository.save(user);
 
+            log.info("User role changed successfully | adminId={}, userId={}, userName={}, oldRole={}, newRole={}",
+                    adminId,
+                    user.getId(),
+                    user.getUsername(),
+                    oldRole.name(),
+                    newRole.name()
+            );
+
             // Audit Maintaining - Role Change Success
             auditService.success(
                     adminId,
@@ -151,6 +185,11 @@ public class AdminUserService {
                     .build();
 
         } catch (Exception e) {
+
+            log.warn("User role change failed | adminId={}, userId={}",
+                    adminId,
+                    userId
+            );
 
             // Audit Maintaining - Role Change Failure
             auditService.failure(

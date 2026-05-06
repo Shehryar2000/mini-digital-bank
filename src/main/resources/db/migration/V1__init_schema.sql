@@ -21,9 +21,11 @@ CREATE TABLE customers (
 
 CREATE TABLE accounts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    account_number VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    account_number BIGINT UNIQUE NOT NULL,
     customer_id UUID NOT NULL,
     balance NUMERIC(19,4) NOT NULL DEFAULT 0.0000,
+    type VARCHAR(30) NOT NULL,
     status VARCHAR(20) NOT NULL,
     version INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL,

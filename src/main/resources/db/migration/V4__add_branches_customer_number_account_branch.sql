@@ -15,4 +15,4 @@ nextval('customer_seq') NOT NULL;
 ALTER TABLE accounts
 ADD COLUMN branch_id INT NOT NULL REFERENCES branches(id);
 
-CREATE SEQUENCE account_seq START 1010000;
+CREATE SEQUENCE account_seq START 1000000001;

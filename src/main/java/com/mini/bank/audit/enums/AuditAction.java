@@ -21,5 +21,16 @@ public enum AuditAction {
     CUSTOMER_UPDATED,
 
     //Account
-    ACCOUNT_CREATED
+    ACCOUNT_CREATED,
+    ACCOUNT_DEPOSIT,
+    ACCOUNT_WITHDRAW,
+    ACCOUNT_FETCH,
+    ACCOUNT_BALANCE,
+
+    //Ledger
+    LEDGER_CREATED,
+    LEDGER_FETCH,
+
+    //Transfer
+    TRANSFER
 }

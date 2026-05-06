@@ -23,7 +23,6 @@ public class AuthController {
     @PostMapping("/register-user")
     public ResponseEntity<UserRegisterResponse> registerUser(@Valid @RequestBody UserRegisterRequest request, HttpServletRequest http) {
         String ip = IpUtil.getClientIp(http);
-        System.out.println("ip in registering: " + ip);
         UserRegisterResponse response = authService.register(request, ip);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
