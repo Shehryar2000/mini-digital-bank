@@ -1,5 +1,6 @@
 package com.mini.bank.transfer.controller;
 
+import com.mini.bank.transfer.dto.TransferDetailsResponse;
 import com.mini.bank.transfer.service.TransferService;
 import com.mini.bank.transfer.dto.TransferRequest;
 import com.mini.bank.common.util.IpUtil;
@@ -9,10 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/transfers")
@@ -28,6 +26,16 @@ public class TransferController {
     ) {
         String ip = IpUtil.getClientIp(http);
         ApiResponse response = transferService.transfer(request, ip);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/{referenceId}")
+    public ResponseEntity<TransferDetailsResponse> getTransferDetails(
+            @PathVariable String referenceId,
+            HttpServletRequest http
+    ) {
+        String ip = IpUtil.getClientIp(http);
+        TransferDetailsResponse response = transferService.getTransferDetails(referenceId, ip);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

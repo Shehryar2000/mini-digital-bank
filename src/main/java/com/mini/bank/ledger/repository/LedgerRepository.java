@@ -1,6 +1,8 @@
 package com.mini.bank.ledger.repository;
 
 import com.mini.bank.ledger.entity.LedgerEntry;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -8,6 +10,12 @@ import java.util.UUID;
 
 public interface LedgerRepository extends JpaRepository<LedgerEntry, UUID> {
 
-    List<LedgerEntry> findByAccountIdOrderByCreatedAtDesc(UUID accountId);
+//    List<LedgerEntry> findByAccountIdOrderByCreatedAtDesc(UUID accountId);
 
+    Page<LedgerEntry> findByAccountIdOrderByCreatedAtDesc(
+            UUID accountId,
+            Pageable pageable
+    );
+
+    List<LedgerEntry> findTop5ByAccountIdOrderByCreatedAtDesc(UUID accountId);
 }

@@ -13,9 +13,13 @@ import com.mini.bank.ledger.enums.LedgerType;
 import com.mini.bank.ledger.repository.LedgerRepository;
 import com.mini.bank.audit.service.AuditService;
 import com.mini.bank.common.security.AuthContext;
+import com.mini.bank.transfer.dto.TransferDetailsResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,7 +70,7 @@ public class LedgerEntryService {
 
     }
 
-    public List<LedgerResponse> getHistory(UUID accountId, String ip) {
+    public Page<LedgerResponse> getHistory(UUID accountId, int page, int size, String ip) {
 
         try {
 
@@ -74,28 +78,14 @@ public class LedgerEntryService {
             accountValidator.validateOwnership(account, ip, AuditAction.LEDGER_FETCH);
             accountValidator.validateAccountActive(account, ip, AuditAction.LEDGER_FETCH);
 
-            List<LedgerEntry> entries = ledgerRepository.findByAccountIdOrderByCreatedAtDesc(accountId);
+            Pageable pageable = PageRequest.of(page, size);
 
-            List<LedgerResponse> responses = new ArrayList<>();
+            Page<LedgerEntry> entries = ledgerRepository.findByAccountIdOrderByCreatedAtDesc(accountId, pageable);
 
-            for (LedgerEntry entry : entries) {
-
-                responses.add(
-
-                        LedgerResponse.builder()
-                                .type(entry.getLedgerType().toString())
-                                .amount(entry.getAmount())
-                                .referenceId(entry.getReferenceId())
-                                .createdAt(entry.getCreatedAt())
-                                .build()
-                );
-
-            }
-
-            log.info("Ledger history fetched | accountId={}, entries={}, userId={}",
+            log.info("Ledger history fetched | accountId={} | page={} | size={}",
                     accountId,
-                    entries.size(),
-                    authContext.getUserId()
+                    page,
+                    size
             );
 
             // Audit Maintaining - Ledger Fetched Success
@@ -107,12 +97,20 @@ public class LedgerEntryService {
                     accountId,
                     Map.of(
                             "accountId", accountId,
-                            "totalEntries", entries.size(),
-                            "customerId", authContext.getCustomerId()
+                            "customerId", authContext.getCustomerId(),
+                            "size", size,
+                            "records", entries.getTotalElements()
                     )
             );
 
-            return responses;
+            return entries.map(entry ->
+                    LedgerResponse.builder()
+                            .type(entry.getLedgerType().name())
+                            .amount(entry.getAmount())
+                            .referenceId(entry.getReferenceId())
+                            .createdAt(entry.getCreatedAt())
+                            .build()
+            );
 
         } catch (AccountNotFoundException | UnauthorizedException | AccountNotActiveException e) {
             throw e;
@@ -132,6 +130,72 @@ public class LedgerEntryService {
                     errorMeta(e)
             );
 
+            throw e;
+        }
+    }
+
+    public List<LedgerResponse> getMiniStatement(UUID accountId, String ip) {
+
+        try {
+
+            Account account = accountValidator.getAccountById(accountId, ip, AuditAction.LEDGER_FETCH);
+            accountValidator.validateOwnership(account, ip, AuditAction.LEDGER_FETCH);
+            accountValidator.validateAccountActive(account, ip, AuditAction.LEDGER_FETCH);
+
+            List<LedgerEntry> entries = ledgerRepository.findTop5ByAccountIdOrderByCreatedAtDesc(accountId);
+
+            log.info(
+                    "Mini statement fetched | accountId={} | totalRecords={}",
+                    accountId,
+                    entries.size()
+            );
+
+            List<LedgerResponse> ledgerResponses = new ArrayList<>();
+            for (LedgerEntry entry : entries) {
+
+                ledgerResponses.add(
+                        LedgerResponse.builder()
+                                .type(entry.getLedgerType().name())
+                                .amount(entry.getAmount())
+                                .referenceId(entry.getReferenceId())
+                                .createdAt(entry.getCreatedAt())
+                                .build()
+                );
+            }
+
+            auditService.success(
+                    authContext.getUserId(),
+                    AuditAction.LEDGER_FETCH,
+                    ip,
+                    AuditEntityType.LEDGER,
+                    accountId,
+                    Map.of(
+                            "operation", "MINI_STATEMENT",
+                            "records", entries.size()
+                    )
+            );
+
+            return ledgerResponses;
+
+        } catch (AccountNotFoundException | UnauthorizedException | AccountNotActiveException e) {
+            throw e;
+        } catch (Exception e) {
+
+            log.error(
+                    "Mini statement failed | accountId={} | error={}",
+                    accountId,
+                    e.getMessage(),
+                    e
+            );
+
+            auditService.failure(
+                    authContext.getUserId(),
+                    AuditAction.LEDGER_FETCH,
+                    ip,
+                    AuditEntityType.LEDGER,
+                    null,
+                    errorMeta(e)
+            );
             throw e;
         }
     }

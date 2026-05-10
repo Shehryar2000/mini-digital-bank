@@ -244,6 +244,19 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(api, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(TransferNotFoundException.class)
+    public ResponseEntity<ApiError> handleTransferNotActive(
+            TransferNotFoundException ex,
+            HttpServletRequest request) {
+        ApiError api = new ApiError(
+                ex.getMessage(),
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.name(),
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(api, HttpStatus.NOT_FOUND);
+    }
+
     // Pre-defined Exceptions
 
     @ExceptionHandler(IllegalArgumentException.class)

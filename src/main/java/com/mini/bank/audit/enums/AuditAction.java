@@ -32,5 +32,6 @@ public enum AuditAction {
     LEDGER_FETCH,
 
     //Transfer
-    TRANSFER
+    TRANSFER,
+    TRANSFER_FETCH
 }

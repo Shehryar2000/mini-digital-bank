@@ -1,6 +1,8 @@
 package com.mini.bank.transfer.service;
 
+import com.mini.bank.common.exception.*;
 import com.mini.bank.ledger.service.LedgerEntryService;
+import com.mini.bank.transfer.dto.TransferDetailsResponse;
 import com.mini.bank.transfer.dto.TransferRequest;
 import com.mini.bank.account.entity.Account;
 import com.mini.bank.transfer.entity.Transfer;
@@ -12,13 +14,10 @@ import com.mini.bank.account.validator.AccountValidator;
 import com.mini.bank.audit.enums.AuditAction;
 import com.mini.bank.audit.enums.AuditEntityType;
 import com.mini.bank.audit.service.AuditService;
-import com.mini.bank.common.exception.AccountNotActiveException;
-import com.mini.bank.common.exception.AccountNotFoundException;
-import com.mini.bank.common.exception.InsufficientBalanceException;
-import com.mini.bank.common.exception.UnauthorizedException;
 import com.mini.bank.common.security.AuthContext;
 import com.mini.bank.common.util.ReferenceIdGenerator;
 import com.mini.bank.corebanking.dto.ApiResponse;
+import com.mini.bank.transfer.validator.TransferValidator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +39,7 @@ public class TransferService {
     private final AuditService auditService;
     private final AuthContext authContext;
     private final ReferenceIdGenerator refIdGenerator;
+    private final TransferValidator transferValidator;
 
 
     @Transactional
@@ -138,6 +138,81 @@ public class TransferService {
                     null,
                     Map.of(
                             "referenceId", refId,
+                            "error", e.getMessage()
+                    )
+            );
+
+            throw e;
+        }
+    }
+
+    //
+
+    public TransferDetailsResponse getTransferDetails(String referenceId, String ip) {
+
+        try {
+
+            log.info("Fetching transfer details | referenceId={}", referenceId);
+
+            Transfer transfer = transferValidator.getTransferByReferenceId(referenceId, ip, AuditAction.TRANSFER_FETCH);
+
+            Account account = accountValidator.getAccountById(transfer.getFromAccount().getId(), ip, AuditAction.TRANSFER_FETCH);
+            accountValidator.validateOwnership(account, ip, AuditAction.TRANSFER_FETCH);
+            accountValidator.validateAccountActive(account, ip, AuditAction.TRANSFER_FETCH);
+
+            String fromAccount = String.format(
+                    "%s-%s",
+                    account.getBranch().getCode(),
+                    account.getAccountNumber()
+            );
+            String toAccount = String.format(
+                    "%s-%s",
+                    transfer.getToAccount()
+                            .getBranch()
+                            .getCode(),
+                    transfer.getToAccount()
+                            .getAccountNumber()
+            );
+
+            auditService.success(
+                    authContext.getUserId(),
+                    AuditAction.TRANSFER_FETCH,
+                    ip,
+                    AuditEntityType.TRANSFER,
+                    transfer.getId(),
+                    Map.of(
+                            "referenceId", referenceId
+                    )
+            );
+
+            return TransferDetailsResponse.builder()
+                    .referenceId(referenceId)
+                    .fromAccount(fromAccount)
+                    .toAccount(toAccount)
+                    .amount(transfer.getAmount())
+                    .status(transfer.getStatus().name())
+                    .createdAt(transfer.getCreatedAt().toString())
+                    .build();
+        } catch (TransferNotFoundException | AccountNotFoundException | UnauthorizedException |
+                 AccountNotActiveException e) {
+            throw e;
+        } catch (Exception e) {
+
+            log.error(
+                    "Transfer fetch failed | referenceId={} | error={}",
+                    referenceId,
+                    e.getMessage(),
+                    e
+            );
+
+            auditService.failure(
+                    authContext.getUserId(),
+                    AuditAction.TRANSFER_FETCH,
+                    ip,
+                    AuditEntityType.TRANSFER,
+                    null,
+                    Map.of(
+                            "referenceId", referenceId,
                             "error", e.getMessage()
                     )
             );
