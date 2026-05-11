@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -81,9 +82,23 @@ public class AccountController {
     public ResponseEntity<BalanceResponse> getBalance(
             @PathVariable UUID id,
             HttpServletRequest http
-    ){
+    ) {
         String ip = IpUtil.getClientIp(http);
         BalanceResponse response = accountService.getBalance(id, ip);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/status/{accountId}")
+    public ResponseEntity<ApiResponse> updateAccountStatus(
+            @PathVariable UUID accountId,
+            @Valid
+            @RequestBody
+            UpdateAccountStatusRequest request,
+            HttpServletRequest http
+    ) {
+        String ip = IpUtil.getClientIp(http);
+        ApiResponse response = accountService.updateStatus(accountId, request, ip);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

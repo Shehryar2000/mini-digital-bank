@@ -41,7 +41,6 @@ public class TransferService {
     private final ReferenceIdGenerator refIdGenerator;
     private final TransferValidator transferValidator;
 
-
     @Transactional
     public ApiResponse transfer(TransferRequest request, String ip) {
 
@@ -76,9 +75,13 @@ public class TransferService {
             }
 
             accountValidator.validateOwnership(fromAccount, ip, AuditAction.TRANSFER);
-            accountValidator.validateAccountActive(fromAccount, ip, AuditAction.TRANSFER);
-            accountValidator.validateAccountActive(toAccount, ip, AuditAction.TRANSFER);
+//            accountValidator.validateAccountActive(fromAccount, ip, AuditAction.TRANSFER);
+            accountValidator.validateAccountAccessible(fromAccount, ip, AuditAction.TRANSFER);
+//            accountValidator.validateAccountActive(toAccount, ip, AuditAction.TRANSFER);
+            accountValidator.validateAccountAccessible(toAccount, ip, AuditAction.TRANSFER);
             accountValidator.validateBalance(fromAccount, request.getAmount(), ip, AuditAction.TRANSFER);
+            accountValidator.validateDebitAllowed(fromAccount, ip, AuditAction.TRANSFER);
+            accountValidator.validateCreditAllowed(toAccount, ip, AuditAction.TRANSFER);
 
             fromAccount.setBalance(fromAccount.getBalance().subtract(request.getAmount()));
             toAccount.setBalance(toAccount.getBalance().add(request.getAmount()));
@@ -124,7 +127,7 @@ public class TransferService {
                     .message("Transfer successful. Ref: " + refId)
                     .build();
         } catch (IllegalArgumentException | AccountNotFoundException | UnauthorizedException |
-                 AccountNotActiveException | InsufficientBalanceException e) {
+                 AccountNotActiveException | InsufficientBalanceException | AccountOperationRestrictedException e) {
             throw e;
         } catch (Exception e) {
 
@@ -146,8 +149,6 @@ public class TransferService {
         }
     }
 
-    //
-
     public TransferDetailsResponse getTransferDetails(String referenceId, String ip) {
 
         try {
@@ -158,8 +159,8 @@ public class TransferService {
 
             Account account = accountValidator.getAccountById(transfer.getFromAccount().getId(), ip, AuditAction.TRANSFER_FETCH);
             accountValidator.validateOwnership(account, ip, AuditAction.TRANSFER_FETCH);
-            accountValidator.validateAccountActive(account, ip, AuditAction.TRANSFER_FETCH);
-
+//            accountValidator.validateAccountActive(account, ip, AuditAction.TRANSFER_FETCH);
+            accountValidator.validateAccountAccessible(account, ip, AuditAction.TRANSFER_FETCH);
             String fromAccount = String.format(
                     "%s-%s",
                     account.getBranch().getCode(),

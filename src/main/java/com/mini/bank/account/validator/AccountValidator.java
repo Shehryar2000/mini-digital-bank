@@ -202,4 +202,120 @@ public class AccountValidator {
 
         }
     }
+
+    public void validateDebitAllowed(Account account, String ip, AuditAction action) {
+
+        if (
+                account.getStatus().equals(AccountStatus.FROZEN) ||
+                        account.getStatus().equals(AccountStatus.BLOCKED) ||
+                        account.getStatus().equals(AccountStatus.CLOSED)
+        ) {
+
+            log.warn("Debit operations not allowed | accountId={} | accountStatus={}",
+                    account.getId(),
+                    account.getStatus().name()
+            );
+
+            auditService.failure(
+                    authContext.getUserId(),
+                    action,
+                    ip,
+                    AuditEntityType.ACCOUNT,
+                    account.getId(),
+                    Map.of(
+                            "status", account.getStatus()
+                    )
+            );
+
+            throw new AccountOperationRestrictedException("debit operations not allowed");
+
+        }
+    }
+
+    public void validateCreditAllowed(Account account, String ip, AuditAction action) {
+
+        if (
+                account.getStatus().equals(AccountStatus.BLOCKED) ||
+                        account.getStatus().equals(AccountStatus.CLOSED)
+        ) {
+
+            log.warn("Credit operations not allowed | accountId={} | accountStatus={}",
+                    account.getId(),
+                    account.getStatus().name()
+            );
+
+            auditService.failure(
+                    authContext.getUserId(),
+                    action,
+                    ip,
+                    AuditEntityType.ACCOUNT,
+                    account.getId(),
+                    Map.of(
+                            "status", account.getStatus()
+                    )
+            );
+
+            throw new AccountOperationRestrictedException("credit operations not allowed");
+        }
+    }
+
+    public void validateAccountAccessible(Account account, String ip, AuditAction action) {
+        if (
+                account.getStatus() == AccountStatus.BLOCKED ||
+                        account.getStatus() == AccountStatus.CLOSED
+        ) {
+
+            log.warn(
+                    "Account inaccessible | accountId={} | status={}",
+                    account.getId(),
+                    account.getStatus()
+            );
+
+            auditService.failure(
+                    authContext.getUserId(),
+                    action,
+                    ip,
+                    AuditEntityType.ACCOUNT,
+                    account.getId(),
+                    Map.of(
+                            "status", account.getStatus()
+                    )
+            );
+
+            throw new AccountOperationRestrictedException(
+                    "Account inaccessible"
+            );
+        }
+    }
+
+    public void validateStatusTransition(Account account, AccountStatus oldStatus, AccountStatus newStatus, String ip, AuditAction action) {
+
+        if (oldStatus == AccountStatus.CLOSED) {
+
+            log.warn(
+                    "Failed to change status due to closed account | accountId={} | oldStatus={} | newStatus={}",
+                    account.getId(),
+                    oldStatus,
+                    newStatus
+            );
+
+            auditService.failure(
+                    authContext.getUserId(),
+                    action,
+                    ip,
+                    AuditEntityType.ACCOUNT,
+                    account.getId(),
+                    Map.of(
+                            "accountId", account.getId().toString(),
+                            "oldStatus", oldStatus.name(),
+                            "attemptedStatus", newStatus
+                    )
+            );
+
+            throw new InvalidAccountStatusTransitionException("Closed account cannot be reopened or active");
+
+
+        }
+    }
+
 }

@@ -150,8 +150,9 @@ public class AccountService {
         try {
             accountValidator.validateAmount(request.getAccountId(), request.getAmount(), ip, AuditAction.ACCOUNT_DEPOSIT);
             Account account = accountValidator.getAccountById(request.getAccountId(), ip, AuditAction.ACCOUNT_DEPOSIT);
-            accountValidator.validateAccountActive(account, ip, AuditAction.ACCOUNT_DEPOSIT);
+//            accountValidator.validateAccountActive(account, ip, AuditAction.ACCOUNT_DEPOSIT);
             accountValidator.validateOwnership(account, ip, AuditAction.ACCOUNT_DEPOSIT);
+            accountValidator.validateCreditAllowed(account, ip, AuditAction.ACCOUNT_DEPOSIT);
             BigDecimal newBalance = account.getBalance().add(request.getAmount());
 
             account.setBalance(newBalance);
@@ -184,7 +185,7 @@ public class AccountService {
                     .build();
 
         } catch (UnauthorizedException | IllegalArgumentException | AccountNotFoundException |
-                 AccountNotActiveException e) {
+                 AccountNotActiveException | AccountOperationRestrictedException e) {
             throw e;
         } catch (Exception e) {
 
@@ -218,9 +219,10 @@ public class AccountService {
 
             accountValidator.validateAmount(request.getAccountId(), request.getAmount(), ip, AuditAction.ACCOUNT_WITHDRAW);
             Account account = accountValidator.getAccountById(request.getAccountId(), ip, AuditAction.ACCOUNT_WITHDRAW);
-            accountValidator.validateAccountActive(account, ip, AuditAction.ACCOUNT_WITHDRAW);
+//            accountValidator.validateAccountActive(account, ip, AuditAction.ACCOUNT_WITHDRAW);
             accountValidator.validateOwnership(account, ip, AuditAction.ACCOUNT_WITHDRAW);
             accountValidator.validateBalance(account, request.getAmount(), ip, AuditAction.ACCOUNT_WITHDRAW);
+            accountValidator.validateDebitAllowed(account, ip, AuditAction.ACCOUNT_WITHDRAW);
 
             BigDecimal newBalance = account.getBalance().subtract(request.getAmount());
 
@@ -253,7 +255,7 @@ public class AccountService {
                     .build();
 
         } catch (UnauthorizedException | IllegalArgumentException | AccountNotFoundException |
-                 AccountNotActiveException | InsufficientBalanceException e) {
+                 AccountNotActiveException | InsufficientBalanceException | AccountOperationRestrictedException e) {
             throw e;
         } catch (Exception e) {
 
@@ -377,7 +379,8 @@ public class AccountService {
                 throw new IllegalArgumentException("Either accountId or accountNumber required");
             }
 
-            accountValidator.validateAccountActive(account, ip, AuditAction.ACCOUNT_FETCH);
+//            accountValidator.validateAccountActive(account, ip, AuditAction.ACCOUNT_FETCH);
+            accountValidator.validateAccountAccessible(account, ip, AuditAction.ACCOUNT_FETCH);
 
             String accountNumber = String.format("%s-%s", account.getBranch().getCode(), account.getAccountNumber());
             String branchCode = String.format("%s-%s",
@@ -438,7 +441,8 @@ public class AccountService {
 
         try {
             Account account = accountValidator.getAccountById(accountId, ip, AuditAction.ACCOUNT_BALANCE);
-            accountValidator.validateAccountActive(account, ip, AuditAction.ACCOUNT_BALANCE);
+//            accountValidator.validateAccountActive(account, ip, AuditAction.ACCOUNT_BALANCE);
+            accountValidator.validateAccountAccessible(account, ip, AuditAction.ACCOUNT_BALANCE);
             accountValidator.validateOwnership(account, ip, AuditAction.ACCOUNT_BALANCE);
 
             log.info("Account balance fetched | accountId={}, accountNumber={}",
@@ -481,6 +485,99 @@ public class AccountService {
             );
             throw e;
         }
+    }
+
+    // Update Account Status
+    @Transactional
+    public ApiResponse updateStatus(UUID accountId, UpdateAccountStatusRequest request, String ip) {
+
+        try {
+
+            log.info(
+                    "Updating Account status | accountId={} |  newStatus={}",
+                    accountId,
+                    request.getStatus()
+            );
+
+            Account account = accountValidator.getAccountById(accountId, ip, AuditAction.ACCOUNT_STATUS_UPDATE);
+            AccountStatus oldStatus = account.getStatus();
+
+            accountValidator.validateStatusTransition(account, oldStatus, request.getStatus(), ip, AuditAction.ACCOUNT_STATUS_UPDATE);
+
+            if (oldStatus == request.getStatus()) {
+
+                log.warn(
+                        "Account status unchanged | accountId={} |  oldStatus={} | newStatus={}",
+                        accountId,
+                        oldStatus,
+                        request.getStatus()
+                );
+
+                auditService.failure(
+                        authContext.getUserId(),
+                        AuditAction.ACCOUNT_STATUS_UPDATE,
+                        ip,
+                        AuditEntityType.ACCOUNT,
+                        accountId,
+                        Map.of(
+                                "accountId", accountId.toString(),
+                                "oldStatus", oldStatus.name(),
+                                "newStatus", request.getStatus().name()
+                        )
+                );
+
+                throw new NoChangesDetectedException("No changes detected");
+
+            }
+
+            account.setStatus(request.getStatus());
+            accountRepository.save(account);
+
+            log.info(
+                    "Account status updated | accountId={} | oldStatus={} | newStatus={}",
+                    accountId,
+                    oldStatus,
+                    request.getStatus()
+            );
+
+            auditService.success(
+                    authContext.getUserId(),
+                    AuditAction.ACCOUNT_STATUS_UPDATE,
+                    ip,
+                    AuditEntityType.ACCOUNT,
+                    accountId,
+                    Map.of(
+                            "oldStatus", oldStatus,
+                            "newStatus", request.getStatus()
+                    )
+            );
+
+
+            return ApiResponse.builder()
+                    .message("Account status updated successfully")
+                    .build();
+
+        } catch (AccountNotFoundException | NoChangesDetectedException e) {
+            throw e;
+        } catch (Exception e) {
+
+            log.error("Failed to change account status | accountId={} | newStatus={}",
+                    accountId,
+                    request.getStatus()
+            );
+
+            auditService.failure(
+                    authContext.getUserId(),
+                    AuditAction.ACCOUNT_STATUS_UPDATE,
+                    ip,
+                    AuditEntityType.ACCOUNT,
+                    accountId,
+                    errorMeta(e)
+            );
+
+            throw e;
+        }
+
     }
 
     // --------------- Helper Methods --------------------

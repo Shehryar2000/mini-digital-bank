@@ -257,6 +257,33 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(api, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(AccountOperationRestrictedException.class)
+    public ResponseEntity<ApiError> handleOperationRestricted(
+            AccountOperationRestrictedException ex,
+            HttpServletRequest request) {
+        ApiError api = new ApiError(
+                ex.getMessage(),
+                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.FORBIDDEN.name(),
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(api, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(InvalidAccountStatusTransitionException.class)
+    public ResponseEntity<ApiError> handleOperationRestricted(
+            InvalidAccountStatusTransitionException ex,
+            HttpServletRequest request) {
+        ApiError api = new ApiError(
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.name(),
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(api, HttpStatus.BAD_REQUEST);
+    }
+
+
     // Pre-defined Exceptions
 
     @ExceptionHandler(IllegalArgumentException.class)

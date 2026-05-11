@@ -26,6 +26,7 @@ public enum AuditAction {
     ACCOUNT_WITHDRAW,
     ACCOUNT_FETCH,
     ACCOUNT_BALANCE,
+    ACCOUNT_STATUS_UPDATE,
 
     //Ledger
     LEDGER_CREATED,

@@ -76,8 +76,8 @@ public class LedgerEntryService {
 
             Account account = accountValidator.getAccountById(accountId, ip, AuditAction.LEDGER_FETCH);
             accountValidator.validateOwnership(account, ip, AuditAction.LEDGER_FETCH);
-            accountValidator.validateAccountActive(account, ip, AuditAction.LEDGER_FETCH);
-
+//            accountValidator.validateAccountActive(account, ip, AuditAction.LEDGER_FETCH);
+            accountValidator.validateAccountAccessible(account, ip, AuditAction.LEDGER_FETCH);
             Pageable pageable = PageRequest.of(page, size);
 
             Page<LedgerEntry> entries = ledgerRepository.findByAccountIdOrderByCreatedAtDesc(accountId, pageable);
@@ -140,8 +140,8 @@ public class LedgerEntryService {
 
             Account account = accountValidator.getAccountById(accountId, ip, AuditAction.LEDGER_FETCH);
             accountValidator.validateOwnership(account, ip, AuditAction.LEDGER_FETCH);
-            accountValidator.validateAccountActive(account, ip, AuditAction.LEDGER_FETCH);
-
+//            accountValidator.validateAccountActive(account, ip, AuditAction.LEDGER_FETCH);
+            accountValidator.validateAccountAccessible(account, ip, AuditAction.LEDGER_FETCH);
             List<LedgerEntry> entries = ledgerRepository.findTop5ByAccountIdOrderByCreatedAtDesc(accountId);
 
             log.info(
