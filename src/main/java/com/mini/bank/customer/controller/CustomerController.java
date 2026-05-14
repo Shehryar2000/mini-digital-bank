@@ -4,6 +4,7 @@ import com.mini.bank.common.util.IpUtil;
 import com.mini.bank.corebanking.dto.ApiResponse;
 import com.mini.bank.customer.dto.CustomerResponse;
 import com.mini.bank.customer.dto.UpdateCustomerRequest;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,10 @@ public class CustomerController {
         this.customerService = customerService;
     }
 
+    @Operation(
+            summary = "Get Current Customer",
+            description = "Returns current customer profile"
+    )
     @GetMapping("/myself")
     public ResponseEntity<CustomerResponse> getCurrentCustomer(HttpServletRequest http) {
         String ip = IpUtil.getClientIp(http);

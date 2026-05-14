@@ -5,6 +5,8 @@ import com.mini.bank.account.service.AccountService;
 import com.mini.bank.transfer.service.TransferService;
 import com.mini.bank.common.util.IpUtil;
 import com.mini.bank.corebanking.dto.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +24,16 @@ import java.util.UUID;
 public class AccountController {
 
     private final AccountService accountService;
-    private final TransferService transferService;
 
+    @Operation(
+            summary = "Create Bank Account",
+            description = "Creates a new customer bank account"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Account created successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping
     public ResponseEntity<AccountResponse> createAccount(
             @Valid @RequestBody CreateAccountRequest request,
@@ -34,6 +44,14 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(
+            summary = "Get My Accounts",
+            description = "Returns all accounts of current customer"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Accounts fetched"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @GetMapping("/my-accounts")
     public ResponseEntity<List<AccountResponse>> getMyAccounts(HttpServletRequest http) {
         String ip = IpUtil.getClientIp(http);
@@ -58,6 +76,15 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @Operation(
+            summary = "Deposit Money",
+            description = "Deposits amount into account"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Deposit successful"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid amount"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping("/deposit")
     public ResponseEntity<ApiResponse> deposit(
             @Valid @RequestBody DepositRequest request,
@@ -68,6 +95,15 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @Operation(
+            summary = "Withdraw Money",
+            description = "Withdraws amount from account"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Withdraw successful"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Insufficient balance"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
     @PostMapping("/withdraw")
     public ResponseEntity<ApiResponse> withdraw(
             @Valid @RequestBody WithdrawRequest request,
@@ -78,6 +114,14 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @Operation(
+            summary = "Get Account Balance",
+            description = "Returns current account balance"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Balance fetched"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Account not found")
+    })
     @GetMapping("/balance/{id}")
     public ResponseEntity<BalanceResponse> getBalance(
             @PathVariable UUID id,
@@ -88,6 +132,15 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @Operation(
+            summary = "Update Account Status",
+            description = "Admin can activate, freeze or close account"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Status updated"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "No changes detected"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/status/{accountId}")
     public ResponseEntity<ApiResponse> updateAccountStatus(

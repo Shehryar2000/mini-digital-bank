@@ -24,7 +24,6 @@ public class AuditService {
 
     private static final Logger log = LoggerFactory.getLogger(AuditService.class);
     private final AuditRepository auditRepository;
-    private final ObjectMapper objectMapper;
 
     public void log(
             UUID userId,
