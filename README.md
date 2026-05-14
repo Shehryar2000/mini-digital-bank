@@ -90,6 +90,36 @@ Modular architecture:
 | GET | api/transfers/{txnId} | Get Transfer Details | Transfer |
 | GET | /api/ledger/mini-statement/{accountId} | Mini Statement | Ledger |
 
+## Swagger API Documentation
+
+### Swagger Home
+![Swagger Home](screenshots/swagger-home.png)
+
+### JWT Token
+![JWT Token](screenshots/jwt-auth.png)
+
+### User Login
+![User Login](screenshots/user-login.png)
+
+### Get Customer
+![Get Customer](screenshots/get-customer.png)
+
+### Get Accounts
+![Get Accounts](screenshots/get-accounts.png)
+
+### Account Withdraw
+![Account Withdraw](screenshots/account-withdraw.png)
+
+### Get Account Balance
+![Get Account Balance](screenshots/get-balance.png)
+
+### Account to Account Transfer
+![Account Transfer](screenshots/transfer-api.png)
+
+### Ledger History
+![Account Statement](screenshots/ledger-history.png)
+
+
 ## Run Project
 
 ```bash
