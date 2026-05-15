@@ -43,6 +43,10 @@ Modular architecture:
 
 ![Architecture Diagram](screenshots/Architecture.jpg)
 
+## Database Design (ER Diagram)
+
+![ER Diagram](screenshots/ER_diagram.png)
+
 ---
 
 # Features
