@@ -41,7 +41,7 @@ Modular architecture:
 
 ## System Architecture
 
-![Architecture Diagram](screenshots/Architecture_Diagram.png)
+![Architecture Diagram](screenshots/Architecture.jpg)
 
 ---
 
